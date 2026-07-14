@@ -86,8 +86,10 @@ curl -X POST localhost:8123/recall \
   -H 'Content-Type: application/json' \
   -d '{"user_id":"alice","query":"what language does the user like","top_k":3}'
 
-# list / delete / forget
+# list / update / delete / forget
 curl "localhost:8123/memories?user_id=alice"
+curl -X PUT localhost:8123/memory/1 -H 'Content-Type: application/json' \
+  -d '{"content":"updated text","mem_type":"preference"}'
 curl -X DELETE localhost:8123/memory/1
 curl -X POST localhost:8123/forget -H 'Content-Type: application/json' -d '{"user_id":"alice"}'
 ```
@@ -219,6 +221,8 @@ curl -X POST localhost:8123/remember -H 'Content-Type: application/json' \
 curl -X POST localhost:8123/recall -H 'Content-Type: application/json' \
   -d '{"user_id":"alice","query":"用户用什么语言","top_k":3}'
 curl "localhost:8123/memories?user_id=alice"
+curl -X PUT localhost:8123/memory/1 -H 'Content-Type: application/json' \
+  -d '{"content":"更新后的文本","mem_type":"preference"}'
 curl -X DELETE localhost:8123/memory/1
 curl -X POST localhost:8123/forget -H 'Content-Type: application/json' -d '{"user_id":"alice"}'
 ```
@@ -231,6 +235,7 @@ mem = Memory(user_id="alice", session_id="s1")
 mem.remember("用户是一名后端工程师")
 results = mem.recall("用户的技术背景")
 print(results[0]["content"], results[0]["score"])
+mem.update(results[0]["id"], content="用户是后端工程师，喜欢 Go")
 ```
 
 ### CLI

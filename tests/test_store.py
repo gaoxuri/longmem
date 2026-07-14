@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from longmem import init_db, remember, recall, list_memories, delete_memory, forget_user
-from longmem.store import batch_remember, purge_expired
+from longmem.store import batch_remember, purge_expired, update_memory
 
 USER = "test_user"
 
@@ -48,7 +48,17 @@ def test_delete_and_forget():
     assert list_memories(USER) == []
 
 
-def test_batch_remember():
+def test_update_memory():
+    res = remember(USER, "原始内容：用户喜欢红色")
+    mid = res["id"]
+    assert update_memory(mid, content="更新内容：用户喜欢蓝色")
+    rows = list_memories(USER)
+    assert any(r["id"] == mid and "蓝色" in r["content"] for r in rows)
+    # type-only update keeps content
+    assert update_memory(mid, mem_type="preference")
+    rows = [r for r in list_memories(USER) if r["id"] == mid]
+    assert rows and rows[0]["mem_type"] == "preference"
+    delete_memory(mid)
     res = batch_remember([
         (USER, "批量记忆一", None, "fact", None),
         (USER, "批量记忆二", None, "fact", None),

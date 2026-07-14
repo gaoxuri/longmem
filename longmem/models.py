@@ -24,6 +24,12 @@ class BatchRememberReq(BaseModel):
     items: List[RememberItem]
 
 
+class UpdateReq(BaseModel):
+    content: Optional[str] = None
+    mem_type: Optional[str] = None
+    ttl_seconds: Optional[int] = None
+
+
 class RecallReq(BaseModel):
     user_id: str
     session_id: Optional[str] = None

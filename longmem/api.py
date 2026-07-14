@@ -4,10 +4,10 @@ import uvicorn
 from fastapi import FastAPI
 
 from .config import SERVICE_HOST, SERVICE_PORT
-from .models import RememberReq, RecallReq, BatchRememberReq
-from .store import remember, recall, list_memories, delete_memory, forget_user, purge_expired, batch_remember
+from .models import RememberReq, RecallReq, BatchRememberReq, UpdateReq
+from .store import remember, recall, list_memories, update_memory, delete_memory, forget_user, purge_expired, batch_remember
 
-app = FastAPI(title="LongMem — AI Long-term Memory Middleware", version="0.2.0")
+app = FastAPI(title="LongMem — AI Long-term Memory Middleware", version="0.2.1")
 
 
 @app.get("/health")
@@ -40,6 +40,11 @@ def api_recall(req: RecallReq):
 @app.get("/memories")
 def api_list(user_id: str, session_id: str = None, limit: int = 50):
     return {"ok": True, "results": list_memories(user_id, session_id, limit)}
+
+
+@app.put("/memory/{memory_id}")
+def api_update(memory_id: int, req: UpdateReq):
+    return {"ok": update_memory(memory_id, req.content, req.mem_type, req.ttl_seconds)}
 
 
 @app.delete("/memory/{memory_id}")

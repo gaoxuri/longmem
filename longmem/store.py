@@ -103,6 +103,40 @@ def list_memories(user_id, session_id=None, limit=50):
     return [_row_to_dict(r) for r in rows]
 
 
+def update_memory(memory_id, content=None, mem_type=None, ttl_seconds=None):
+    """Patch a memory. Re-embedding happens only when content changes."""
+    conn = get_conn()
+    cur = conn.cursor()
+    if content is not None:
+        summary = summarize(content)
+        vec = Vector(embed(content))
+        cur.execute(
+            """
+            UPDATE memories
+               SET content = %s, summary = %s, embedding = %s,
+                   mem_type = COALESCE(%s, mem_type),
+                   ttl_seconds = %s
+             WHERE id = %s
+            """,
+            (content, summary, vec, mem_type, ttl_seconds, memory_id),
+        )
+    else:
+        cur.execute(
+            """
+            UPDATE memories
+               SET mem_type = COALESCE(%s, mem_type),
+                   ttl_seconds = %s
+             WHERE id = %s
+            """,
+            (mem_type, ttl_seconds, memory_id),
+        )
+    n = cur.rowcount
+    conn.commit()
+    cur.close()
+    conn.close()
+    return n > 0
+
+
 def delete_memory(memory_id):
     conn = get_conn()
     cur = conn.cursor()

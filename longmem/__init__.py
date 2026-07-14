@@ -4,13 +4,14 @@ from .store import (
     remember,
     recall,
     list_memories,
+    update_memory,
     delete_memory,
     forget_user,
     batch_remember,
     purge_expired,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 
 class Memory:
@@ -35,6 +36,9 @@ class Memory:
     def recall(self, query, top_k=None, threshold=None):
         return recall(self.user_id, query, self.session_id, top_k, threshold)
 
+    def update(self, memory_id, content=None, mem_type=None, ttl_seconds=None):
+        return update_memory(memory_id, content, mem_type, ttl_seconds)
+
     def forget(self):
         return forget_user(self.user_id)
 
@@ -44,6 +48,7 @@ __all__ = [
     "remember",
     "recall",
     "list_memories",
+    "update_memory",
     "delete_memory",
     "forget_user",
     "batch_remember",
