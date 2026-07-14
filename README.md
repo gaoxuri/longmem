@@ -1,5 +1,10 @@
 # LongMem
 
+![PyPI](https://img.shields.io/badge/python-3.9%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![CI](https://github.com/gaoxuri/longmem/actions/workflows/ci.yml/badge.svg)
+![Stack](https://img.shields.io/badge/stack-PostgreSQL%20%2B%20pgvector-336791)
+
 > Lightweight long-term memory middleware for LLM apps and agents.
 > Store memories in your own PostgreSQL + pgvector — no closed-source service required.
 
@@ -9,7 +14,7 @@
 > 痛点：现在自建 chatbot / agent 的人一大堆，但「记忆」几乎都要自己造轮子。
 > LongMem 把 remember / recall 两个接口做好，开箱即用、可插拔 embedding。
 
-[English](#english) | 中文
+[English](#english) | 中文 | [Changelog](CHANGELOG.md)
 
 ---
 
