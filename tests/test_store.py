@@ -1,6 +1,7 @@
 """End-to-end smoke tests for LongMem store (uses the configured PG)."""
 import os
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -86,12 +87,22 @@ def test_recall_filters():
     forget_user(USER)
 
 
+def test_purge_cli():
+    forget_user(USER)
+    remember(USER, "1 秒后过期", ttl_seconds=1)
+    time.sleep(1.2)
+    # purge via store function
+    n = purge_expired()
+    assert n == 1
+    assert list_memories(USER) == []
+    forget_user(USER)
+
+
 def test_ttl_expiry():
     # A 1-second TTL memory should be excluded from recall/list after it expires.
     remember(USER, "这条 1 秒后过期", ttl_seconds=1)
     # immediate recall still returns it
     assert any("过期" in r["content"] for r in recall(USER, "过期"))
-    import time
     time.sleep(2)
     # after expiry it should be gone (without purge, just filtered out)
     assert not any("过期" in r["content"] for r in list_memories(USER))

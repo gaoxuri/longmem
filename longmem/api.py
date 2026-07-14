@@ -7,7 +7,7 @@ from .config import SERVICE_HOST, SERVICE_PORT
 from .models import RememberReq, RecallReq, BatchRememberReq, UpdateReq
 from .store import remember, recall, list_memories, update_memory, delete_memory, forget_user, purge_expired, batch_remember
 
-app = FastAPI(title="LongMem — AI Long-term Memory Middleware", version="0.2.2")
+app = FastAPI(title="LongMem — AI Long-term Memory Middleware", version="0.2.4")
 
 
 @app.get("/health")
@@ -55,13 +55,18 @@ def api_delete(memory_id: int):
     return {"ok": delete_memory(memory_id)}
 
 
+@app.post("/purge")
+def api_purge():
+    return {"ok": True, "deleted": purge_expired()}
+
+
 @app.post("/forget")
 def api_forget(req: dict):
     user_id = req.get("user_id")
     if not user_id:
         return {"ok": False, "error": "user_id required"}
-    return {"ok": True, "deleted": forget_user(user_id)}
-
+    n = forget_user(user_id)
+    return {"ok": True, "deleted": n}
 
 @app.post("/forget/expired")
 def api_purge_expired():

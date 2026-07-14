@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "longmem"
-version = "0.2.3"
+version = "0.2.4"
 description = "Lightweight long-term memory middleware for LLM apps and agents"
 readme = "README.md"
 requires-python = ">=3.9"

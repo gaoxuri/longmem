@@ -1,8 +1,32 @@
 """Command-line interface for LongMem."""
 import argparse
 import json
+import time
 
-from .store import remember, recall, list_memories, delete_memory, forget_user
+from .store import (
+    remember,
+    recall,
+    list_memories,
+    delete_memory,
+    forget_user,
+    purge_expired,
+)
+
+
+def _run_purge(interval, once):
+    if once or interval is None:
+        n = purge_expired()
+        print(json.dumps({"ok": True, "deleted": n}, ensure_ascii=False))
+        return
+    print(f"purge daemon: deleting expired memories every {interval}s (Ctrl-C to stop)")
+    try:
+        while True:
+            n = purge_expired()
+            if n:
+                print(json.dumps({"deleted": n}, ensure_ascii=False))
+            time.sleep(interval)
+    except KeyboardInterrupt:
+        print("stopped")
 
 
 def main():
@@ -32,6 +56,11 @@ def main():
     fg = sub.add_parser("forget", help="Forget all of a user's memories")
     fg.add_argument("--user", required=True)
 
+    pg = sub.add_parser("purge", help="Delete expired memories (TTL)")
+    pg.add_argument("--interval", type=int, default=None,
+                    help="If set, run as a daemon loop with this sleep seconds")
+    pg.add_argument("--once", action="store_true", help="Delete once and exit")
+
     args = p.parse_args()
 
     if args.cmd == "remember":
@@ -46,7 +75,10 @@ def main():
         print(json.dumps({"ok": delete_memory(args.id)}, ensure_ascii=False))
     elif args.cmd == "forget":
         print(json.dumps({"ok": True, "deleted": forget_user(args.user)}, ensure_ascii=False))
+    elif args.cmd == "purge":
+        _run_purge(args.interval, args.once)
 
 
 if __name__ == "__main__":
     main()
+

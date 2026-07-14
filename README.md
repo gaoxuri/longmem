@@ -115,6 +115,8 @@ longmem recall   --user alice --query "what language"
 longmem list     --user alice
 longmem delete   --id 1
 longmem forget   --user alice
+longmem purge    --once          # hard-delete all expired memories
+longmem purge    --interval 60   # daemon: repeat every 60s
 ```
 
 ### Batch write & TTL
@@ -131,8 +133,9 @@ curl -X POST localhost:8123/remember/batch \
       ]}'
 
 # a memory with ttl_seconds expires automatically — recall/list skip it,
-# and POST /forget/expired hard-deletes all expired memories.
+# and POST /forget/expired (or /purge) hard-deletes all expired memories.
 curl -X POST localhost:8123/forget/expired -H 'Content-Type: application/json' -d '{}'
+curl -X POST localhost:8123/purge -H 'Content-Type: application/json' -d '{}'
 ```
 
 ```python
@@ -255,6 +258,8 @@ longmem recall   --user alice --query "用什么语言"
 longmem list     --user alice
 longmem delete   --id 1
 longmem forget   --user alice
+longmem purge    --once          # hard-delete all expired memories
+longmem purge    --interval 60   # daemon: repeat every 60s
 ```
 
 ### 批量写入与 TTL（过期）
@@ -271,8 +276,9 @@ curl -X POST localhost:8123/remember/batch \
       ]}'
 
 # 带 ttl_seconds 的记忆会自动过期：recall/list 会跳过它；
-# POST /forget/expired 则把已过期记忆物理删除。
+# POST /forget/expired（或 /purge）则把已过期记忆物理删除。
 curl -X POST localhost:8123/forget/expired -H 'Content-Type: application/json' -d '{}'
+curl -X POST localhost:8123/purge -H 'Content-Type: application/json' -d '{}'
 ```
 
 ```python

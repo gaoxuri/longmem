@@ -32,5 +32,21 @@ services:
       db:
         condition: service_healthy
 
+  purger:
+    build: .
+    environment:
+      PG_HOST: db
+      PG_PORT: 5432
+      PG_NAME: longmem
+      PG_USER: postgres
+      PG_PASSWORD: longmem123
+      EMBED_PROVIDER: fallback
+    # Run the purge daemon: delete expired memories every 60s.
+    command: ["sh", "-c", "python -c 'from longmem import init_db; init_db()' && longmem purge --interval 60"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   pgdata:
