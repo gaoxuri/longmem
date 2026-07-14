@@ -9,6 +9,21 @@ description = "Lightweight long-term memory middleware for LLM apps and agents"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
+keywords = ["llm", "agent", "memory", "rag", "pgvector", "postgresql", "embeddings", "semantic-search", "fastapi"]
+authors = [{ name = "LongMem contributors" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "fastapi",
     "uvicorn",
@@ -24,6 +39,11 @@ dev = ["pytest", "requests"]
 
 [project.scripts]
 longmem = "longmem.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/gaoxuri/longmem"
+Repository = "https://github.com/gaoxuri/longmem"
+Documentation = "https://github.com/gaoxuri/longmem#readme"
 
 [tool.setuptools.packages.find]
 include = ["longmem*"]
