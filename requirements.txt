@@ -1,7 +1,4 @@
-fastapi
-uvicorn
-psycopg2-binary
-openai
-python-dotenv
-pydantic
-httpx
+# Single source of truth for runtime deps is pyproject.toml [project.dependencies].
+# This file just installs the package itself (editable), pulling those deps in.
+# Keep in sync by editing pyproject.toml — do NOT list packages here.
+-e .
