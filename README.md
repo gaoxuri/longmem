@@ -45,6 +45,16 @@ your app ──remember/recall──> LongMem ──> PostgreSQL + pgvector
                                   └─ store.py   (core logic)
 ```
 
+```mermaid
+flowchart LR
+    A[Your LLM App / Agent] -->|remember / recall| B[LongMem API]
+    B --> C[store.py]
+    C --> D[embed.py: vectorize]
+    C --> E[(PostgreSQL + pgvector)]
+    C --> F[summarize.py: optional LLM summary]
+    D --> E
+```
+
 ### Quick start
 
 ```bash
@@ -103,6 +113,31 @@ longmem delete   --id 1
 longmem forget   --user alice
 ```
 
+### Batch write & TTL
+
+Write many memories in one request, and optionally give each a time-to-live:
+
+```bash
+# batch write
+curl -X POST localhost:8123/remember/batch \
+  -H 'Content-Type: application/json' \
+  -d '{"items":[
+        {"user_id":"alice","content":"likes Python","ttl_seconds":3600},
+        {"user_id":"alice","content":"likes coffee"}
+      ]}'
+
+# a memory with ttl_seconds expires automatically — recall/list skip it,
+# and POST /forget/expired hard-deletes all expired memories.
+curl -X POST localhost:8123/forget/expired -H 'Content-Type: application/json' -d '{}'
+```
+
+```python
+from longmem import Memory
+mem = Memory(user_id="alice")
+mem.remember("临时偏好", ttl_seconds=3600)          # expires in 1h
+mem.remember_batch([{"content": "a"}, {"content": "b"}])
+```
+
 ### Switch to a real embedding model
 
 Edit `.env`:
@@ -144,6 +179,18 @@ MIT — see [LICENSE](./LICENSE).
 ---
 
 ## 中文
+
+### 架构
+
+```mermaid
+flowchart LR
+    A[你的 LLM 应用 / Agent] -->|remember / recall| B[LongMem API]
+    B --> C[store.py]
+    C --> D[embed.py: 向量化]
+    C --> E[(PostgreSQL + pgvector)]
+    C --> F[summarize.py: 可选 LLM 摘要]
+    D --> E
+```
 
 ### 特性
 
@@ -194,6 +241,31 @@ longmem recall   --user alice --query "用什么语言"
 longmem list     --user alice
 longmem delete   --id 1
 longmem forget   --user alice
+```
+
+### 批量写入与 TTL（过期）
+
+一次写多条记忆，并可给每条设置存活时间（秒）：
+
+```bash
+# 批量写入
+curl -X POST localhost:8123/remember/batch \
+  -H 'Content-Type: application/json' \
+  -d '{"items":[
+        {"user_id":"alice","content":"喜欢 Python","ttl_seconds":3600},
+        {"user_id":"alice","content":"喜欢咖啡"}
+      ]}'
+
+# 带 ttl_seconds 的记忆会自动过期：recall/list 会跳过它；
+# POST /forget/expired 则把已过期记忆物理删除。
+curl -X POST localhost:8123/forget/expired -H 'Content-Type: application/json' -d '{}'
+```
+
+```python
+from longmem import Memory
+mem = Memory(user_id="alice")
+mem.remember("临时偏好", ttl_seconds=3600)          # 1 小时后过期
+mem.remember_batch([{"content": "a"}, {"content": "b"}])
 ```
 
 ### 切换到真实 Embedding 模型

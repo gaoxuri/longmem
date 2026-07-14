@@ -4,31 +4,42 @@ from .db import get_conn, Vector
 from .embed import embed
 from .summarize import summarize
 
-_COLS = "id,user_id,session_id,content,summary,mem_type,created_at"
+_COLS = "id,user_id,session_id,content,summary,mem_type,ttl_seconds,created_at"
+
+# Only return memories that have not expired (ttl_seconds since creation).
+_NOT_EXPIRED = "(ttl_seconds IS NULL OR created_at + ttl_seconds * INTERVAL '1 second' > now())"
 
 
 def _row_to_dict(row):
     return {k: (str(row[k]) if k == "created_at" else row[k]) for k in row.keys()}
 
 
-def remember(user_id, content, session_id=None, mem_type="fact"):
+def remember(user_id, content, session_id=None, mem_type="fact", ttl_seconds=None):
     summary = summarize(content)
     vec = Vector(embed(content))
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
         """
-        INSERT INTO memories (user_id, session_id, content, summary, mem_type, embedding)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        INSERT INTO memories (user_id, session_id, content, summary, mem_type, ttl_seconds, embedding)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         RETURNING id, created_at
         """,
-        (user_id, session_id, content, summary, mem_type, vec),
+        (user_id, session_id, content, summary, mem_type, ttl_seconds, vec),
     )
     row = cur.fetchone()
     conn.commit()
     cur.close()
     conn.close()
     return {"id": row["id"], "created_at": str(row["created_at"])}
+
+
+def batch_remember(items):
+    """items: list of (user_id, content, session_id, mem_type, ttl_seconds)."""
+    return [
+        remember(uid, content, sid, mtype, ttl)
+        for (uid, content, sid, mtype, ttl) in items
+    ]
 
 
 def recall(user_id, query, session_id=None, top_k=None, threshold=None):
@@ -42,7 +53,7 @@ def recall(user_id, query, session_id=None, top_k=None, threshold=None):
             f"""
             SELECT {_COLS}, 1 - (embedding <=> %s) AS score
             FROM memories
-            WHERE user_id = %s AND session_id = %s
+            WHERE user_id = %s AND session_id = %s AND {_NOT_EXPIRED}
             ORDER BY embedding <=> %s
             LIMIT %s
             """,
@@ -53,7 +64,7 @@ def recall(user_id, query, session_id=None, top_k=None, threshold=None):
             f"""
             SELECT {_COLS}, 1 - (embedding <=> %s) AS score
             FROM memories
-            WHERE user_id = %s
+            WHERE user_id = %s AND {_NOT_EXPIRED}
             ORDER BY embedding <=> %s
             LIMIT %s
             """,
@@ -66,8 +77,7 @@ def recall(user_id, query, session_id=None, top_k=None, threshold=None):
     for r in rows:
         if r["score"] < threshold:
             continue
-        d = _row_to_dict(r)
-        out.append(d)
+        out.append(_row_to_dict(r))
     return out
 
 
@@ -77,14 +87,14 @@ def list_memories(user_id, session_id=None, limit=50):
     if session_id:
         cur.execute(
             f"SELECT {_COLS} FROM memories "
-            "WHERE user_id = %s AND session_id = %s "
-            "ORDER BY created_at DESC LIMIT %s",
+            "WHERE user_id = %s AND session_id = %s AND {_NOT_EXPIRED} "
+            "ORDER BY created_at DESC LIMIT %s".format(_NOT_EXPIRED=_NOT_EXPIRED),
             (user_id, session_id, limit),
         )
     else:
         cur.execute(
-            f"SELECT {_COLS} FROM memories WHERE user_id = %s "
-            "ORDER BY created_at DESC LIMIT %s",
+            f"SELECT {_COLS} FROM memories WHERE user_id = %s AND {_NOT_EXPIRED} "
+            "ORDER BY created_at DESC LIMIT %s".format(_NOT_EXPIRED=_NOT_EXPIRED),
             (user_id, limit),
         )
     rows = cur.fetchall()
@@ -108,6 +118,18 @@ def forget_user(user_id):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("DELETE FROM memories WHERE user_id = %s", (user_id,))
+    n = cur.rowcount
+    conn.commit()
+    cur.close()
+    conn.close()
+    return n
+
+
+def purge_expired():
+    """Hard-delete memories whose TTL has elapsed. Returns number removed."""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(f"DELETE FROM memories WHERE NOT {_NOT_EXPIRED}")
     n = cur.rowcount
     conn.commit()
     cur.close()

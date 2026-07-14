@@ -5,6 +5,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from longmem import init_db, remember, recall, list_memories, delete_memory, forget_user
+from longmem.store import batch_remember, purge_expired
 
 USER = "test_user"
 
@@ -45,3 +46,30 @@ def test_delete_and_forget():
     n = forget_user(USER)
     assert n >= 1
     assert list_memories(USER) == []
+
+
+def test_batch_remember():
+    res = batch_remember([
+        (USER, "批量记忆一", None, "fact", None),
+        (USER, "批量记忆二", None, "fact", None),
+    ])
+    assert len(res) == 2
+    ids = [r["id"] for r in res]
+    assert all(i > 0 for i in ids)
+    # cleanup
+    for i in ids:
+        delete_memory(i)
+
+
+def test_ttl_expiry():
+    # A 1-second TTL memory should be excluded from recall/list after it expires.
+    remember(USER, "这条 1 秒后过期", ttl_seconds=1)
+    # immediate recall still returns it
+    assert any("过期" in r["content"] for r in recall(USER, "过期"))
+    import time
+    time.sleep(2)
+    # after expiry it should be gone (without purge, just filtered out)
+    assert not any("过期" in r["content"] for r in list_memories(USER))
+    # purge then confirm hard-deleted
+    assert purge_expired() >= 1
+    assert not any("过期" in r["content"] for r in list_memories(USER))

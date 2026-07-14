@@ -38,7 +38,10 @@ def get_conn():
 
 
 def init_db():
-    """Create the vector extension and memories table if they do not exist."""
+    """Create the vector extension and memories table if they do not exist.
+
+    Idempotent: safe to run on every boot (Docker CMD does this).
+    """
     conn = get_conn()
     conn.autocommit = True
     cur = conn.cursor()
@@ -52,11 +55,14 @@ def init_db():
             content    TEXT NOT NULL,
             summary    TEXT,
             mem_type   TEXT DEFAULT 'fact',
+            ttl_seconds INTEGER,
             embedding  vector({EMBED_DIM}),
             created_at TIMESTAMPTZ DEFAULT now()
         );
         """
     )
+    # Backfill for existing deployments (column added in 0.2.0).
+    cur.execute("ALTER TABLE memories ADD COLUMN IF NOT EXISTS ttl_seconds INTEGER;")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_mem_user ON memories(user_id);")
     cur.execute(
         "CREATE INDEX IF NOT EXISTS idx_mem_user_session "
