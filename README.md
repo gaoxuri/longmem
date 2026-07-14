@@ -119,6 +119,17 @@ EMBED_DIM=1536          # MUST match the model's output dimension
 > (CJK char-level, latin word-level). It proves the full stack end-to-end with no
 > API key, but is **not** semantically meaningful. Use a real model in production.
 
+### Docker (one command)
+
+```bash
+docker compose up --build
+# API at http://localhost:8123, Swagger at /docs
+```
+
+This spins up PostgreSQL + pgvector and the LongMem API together. Tables are
+auto-created on boot. Override PG / embedding settings via environment in
+`docker-compose.yml`.
+
 ### Tests
 
 ```bash
@@ -199,6 +210,16 @@ EMBED_DIM=1536          # 必须与模型输出维度一致
 
 > 注意：默认 fallback embedding 是确定性的词袋向量（中文逐字、拉丁逐词），
 > 仅用于零依赖跑通全链路验证，**不具备语义意义**，生产请使用真实模型。
+
+### Docker（一条命令）
+
+```bash
+docker compose up --build
+# API 在 http://localhost:8123，Swagger 在 /docs
+```
+
+一键起 PostgreSQL + pgvector 与 LongMem API，建表自动完成。可在
+`docker-compose.yml` 中用环境变量覆盖 PG / embedding 配置。
 
 ### 测试
 

@@ -1,0 +1,36 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: longmem123
+      POSTGRES_DB: longmem
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+
+  api:
+    build: .
+    environment:
+      PG_HOST: db
+      PG_PORT: 5432
+      PG_NAME: longmem
+      PG_USER: postgres
+      PG_PASSWORD: longmem123
+      EMBED_PROVIDER: fallback
+      SERVICE_HOST: "0.0.0.0"
+      SERVICE_PORT: 8123
+    ports:
+      - "8123:8123"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
