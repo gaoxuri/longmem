@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LongMem — demo</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { font: 14px/1.5 system-ui, sans-serif; max-width: 680px; margin: 2rem auto; padding: 0 1rem; }
+  h1 { font-size: 1.4rem; }
+  label { display: block; margin-top: 1rem; font-weight: 600; }
+  input, textarea, select, button { width: 100%; padding: .5rem; margin-top: .3rem; border: 1px solid #8884; border-radius: 6px; background: #0001; color: inherit; }
+  textarea { min-height: 64px; resize: vertical; }
+  button { cursor: pointer; background: #3b82f6; color: #fff; border: 0; font-weight: 600; }
+  button:hover { background: #2563eb; }
+  .row { display: flex; gap: .5rem; }
+  .row > * { flex: 1; }
+  pre { background: #0001; padding: .6rem; border-radius: 6px; overflow: auto; white-space: pre-wrap; }
+  .muted { opacity: .6; font-size: .85rem; }
+</style>
+</head>
+<body>
+<h1>LongMem — long-term memory demo</h1>
+<p class="muted">Talking to the API at <code id="apiBase">…</code></p>
+
+<label>User ID</label>
+<input id="uid" value="demo-user" />
+
+<label>Session ID <span class="muted">(optional)</span></label>
+<input id="sid" placeholder="leave empty for cross-session" />
+
+<label>Type / memory type</label>
+<div class="row">
+  <select id="mtype">
+    <option value="fact">fact</option>
+    <option value="preference">preference</option>
+    <option value="episode">episode</option>
+  </select>
+  <input id="ttl" type="number" placeholder="TTL seconds (optional)" />
+</div>
+
+<label>Remember — content to store</label>
+<textarea id="rememberText" placeholder="e.g. The user prefers Python for backend work"></textarea>
+<button onclick="doRemember()">Remember</button>
+
+<label>Recall — query</label>
+<textarea id="recallText" placeholder="e.g. what language does the user like"></textarea>
+<div class="row">
+  <input id="topk" type="number" value="5" />
+  <select id="filterType">
+    <option value="">no type filter</option>
+    <option value="fact">fact</option>
+    <option value="preference">preference</option>
+    <option value="episode">episode</option>
+  </select>
+</div>
+<button onclick="doRecall()">Recall</button>
+
+<label>Results</label>
+<pre id="out">—</pre>
+
+<script>
+const API = new URLSearchParams(location.search).get("api") || "http://localhost:8123";
+document.getElementById("apiBase").textContent = API;
+
+async function jpost(path, body) {
+  const r = await fetch(API + path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return r.json();
+}
+
+function show(obj) { document.getElementById("out").textContent = JSON.stringify(obj, null, 2); }
+function uid() { return document.getElementById("uid").value || "demo-user"; }
+function sid() { return document.getElementById("sid").value || null; }
+
+async function doRemember() {
+  const body = {
+    user_id: uid(),
+    session_id: sid(),
+    content: document.getElementById("rememberText").value,
+    mem_type: document.getElementById("mtype").value,
+  };
+  const ttl = document.getElementById("ttl").value;
+  if (ttl) body.ttl_seconds = Number(ttl);
+  show(await jpost("/remember", body));
+}
+
+async function doRecall() {
+  const body = {
+    user_id: uid(),
+    session_id: sid(),
+    query: document.getElementById("recallText").value,
+    top_k: Number(document.getElementById("topk").value) || 5,
+  };
+  const ft = document.getElementById("filterType").value;
+  if (ft) body.type_filter = ft;
+  show(await jpost("/recall", body));
+}
+</script>
+</body>
+</html>

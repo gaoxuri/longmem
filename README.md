@@ -158,6 +158,11 @@ EMBED_DIM=1536          # MUST match the model's output dimension
 > (CJK char-level, latin word-level). It proves the full stack end-to-end with no
 > API key, but is **not** semantically meaningful. Use a real model in production.
 
+### Examples
+
+- `examples/basic.py` — minimal SDK usage.
+- `examples/web_demo.py` — zero-dependency web UI (see `examples/README.md`).
+
 ### Docker (one command)
 
 ```bash
@@ -291,6 +296,11 @@ EMBED_DIM=1536          # 必须与模型输出维度一致
 
 > 注意：默认 fallback embedding 是确定性的词袋向量（中文逐字、拉丁逐词），
 > 仅用于零依赖跑通全链路验证，**不具备语义意义**，生产请使用真实模型。
+
+### 示例
+
+- `examples/basic.py` — 最小 SDK 用法。
+- `examples/web_demo.py` — 零依赖网页界面(见 `examples/README.md`)。
 
 ### Docker（一条命令）
 
