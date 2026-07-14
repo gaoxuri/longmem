@@ -36,3 +36,5 @@ class RecallReq(BaseModel):
     query: str
     top_k: Optional[int] = None
     threshold: Optional[float] = None
+    type_filter: Optional[str] = None
+    recency_bias: float = 0.0

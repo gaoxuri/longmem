@@ -7,7 +7,7 @@ from .config import SERVICE_HOST, SERVICE_PORT
 from .models import RememberReq, RecallReq, BatchRememberReq, UpdateReq
 from .store import remember, recall, list_memories, update_memory, delete_memory, forget_user, purge_expired, batch_remember
 
-app = FastAPI(title="LongMem — AI Long-term Memory Middleware", version="0.2.1")
+app = FastAPI(title="LongMem — AI Long-term Memory Middleware", version="0.2.2")
 
 
 @app.get("/health")
@@ -33,7 +33,10 @@ def api_remember_batch(req: BatchRememberReq):
 
 @app.post("/recall")
 def api_recall(req: RecallReq):
-    results = recall(req.user_id, req.query, req.session_id, req.top_k, req.threshold)
+    results = recall(
+        req.user_id, req.query, req.session_id, req.top_k,
+        req.threshold, req.type_filter, req.recency_bias,
+    )
     return {"ok": True, "count": len(results), "results": results}
 
 

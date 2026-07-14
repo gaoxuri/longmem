@@ -11,7 +11,7 @@ from .store import (
     purge_expired,
 )
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 
 class Memory:
@@ -33,8 +33,8 @@ class Memory:
         ]
         return batch_remember(norm)
 
-    def recall(self, query, top_k=None, threshold=None):
-        return recall(self.user_id, query, self.session_id, top_k, threshold)
+    def recall(self, query, top_k=None, threshold=None, type_filter=None, recency_bias=0.0):
+        return recall(self.user_id, query, self.session_id, top_k, threshold, type_filter, recency_bias)
 
     def update(self, memory_id, content=None, mem_type=None, ttl_seconds=None):
         return update_memory(memory_id, content, mem_type, ttl_seconds)

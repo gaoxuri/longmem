@@ -42,42 +42,67 @@ def batch_remember(items):
     ]
 
 
-def recall(user_id, query, session_id=None, top_k=None, threshold=None):
+def recall(user_id, query, session_id=None, top_k=None, threshold=None,
+           type_filter=None, recency_bias=0.0):
+    """Retrieve memories by similarity.
+
+    type_filter  : only return memories of this mem_type
+    recency_bias : 0..1, blend cosine score with a recency factor so that
+                   fresher memories rank higher when scores are close.
+                   final = (1 - bias) * cosine + bias * recency
+    """
     top_k = top_k or DEFAULT_TOP_K
     threshold = threshold if threshold is not None else DEFAULT_THRESHOLD
     qvec = Vector(embed(query))
     conn = get_conn()
     cur = conn.cursor()
+    sql_type = "AND mem_type = %s " if type_filter else ""
+    params = [qvec, user_id, qvec, top_k]
+    if type_filter:
+        params.insert(2, type_filter)
     if session_id:
         cur.execute(
             f"""
             SELECT {_COLS}, 1 - (embedding <=> %s) AS score
             FROM memories
-            WHERE user_id = %s AND session_id = %s AND {_NOT_EXPIRED}
+            WHERE user_id = %s AND session_id = %s {sql_type}AND {_NOT_EXPIRED}
             ORDER BY embedding <=> %s
             LIMIT %s
             """,
-            (qvec, user_id, session_id, qvec, top_k),
+            params,
         )
     else:
         cur.execute(
             f"""
             SELECT {_COLS}, 1 - (embedding <=> %s) AS score
             FROM memories
-            WHERE user_id = %s AND {_NOT_EXPIRED}
+            WHERE user_id = %s {sql_type}AND {_NOT_EXPIRED}
             ORDER BY embedding <=> %s
             LIMIT %s
             """,
-            (qvec, user_id, qvec, top_k),
+            params,
         )
     rows = cur.fetchall()
     cur.close()
     conn.close()
+
     out = []
+    now = None
     for r in rows:
         if r["score"] < threshold:
             continue
-        out.append(_row_to_dict(r))
+        d = _row_to_dict(r)
+        if recency_bias and recency_bias > 0:
+            if now is None:
+                from datetime import datetime, timezone
+                now = datetime.now(timezone.utc)
+            age_days = max(0.0, (now - r["created_at"]).total_seconds() / 86400.0)
+            recency = 1.0 / (1.0 + age_days)
+            d["score"] = round((1 - recency_bias) * r["score"] + recency_bias * recency, 6)
+        out.append(d)
+
+    if recency_bias and recency_bias > 0:
+        out.sort(key=lambda x: x["score"], reverse=True)
     return out
 
 

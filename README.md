@@ -81,10 +81,10 @@ curl -X POST localhost:8123/remember \
   -H 'Content-Type: application/json' \
   -d '{"user_id":"alice","content":"User prefers Python","mem_type":"preference"}'
 
-# recall
+# recall (optionally filter by type, or bias toward recent memories)
 curl -X POST localhost:8123/recall \
   -H 'Content-Type: application/json' \
-  -d '{"user_id":"alice","query":"what language does the user like","top_k":3}'
+  -d '{"user_id":"alice","query":"what language does the user like","top_k":3,"type_filter":"preference","recency_bias":0.3}'
 
 # list / update / delete / forget
 curl "localhost:8123/memories?user_id=alice"
@@ -103,7 +103,9 @@ mem = Memory(user_id="alice", session_id="s1")
 mem.remember("User is a backend engineer")
 results = mem.recall("user's technical background")
 print(results[0]["content"], results[0]["score"])
-```
+mem.update(results[0]["id"], content="User is a backend engineer, likes Go")
+# recall only preferences, biased toward recent ones
+recent_prefs = mem.recall("user preferences", type_filter="preference", recency_bias=0.3)
 
 ### CLI
 
@@ -219,7 +221,7 @@ python -m longmem.api       # 默认 :8123，Swagger 在 /docs
 curl -X POST localhost:8123/remember -H 'Content-Type: application/json' \
   -d '{"user_id":"alice","content":"用户喜欢用 Python","mem_type":"preference"}'
 curl -X POST localhost:8123/recall -H 'Content-Type: application/json' \
-  -d '{"user_id":"alice","query":"用户用什么语言","top_k":3}'
+  -d '{"user_id":"alice","query":"用户用什么语言","top_k":3,"type_filter":"preference","recency_bias":0.3}'
 curl "localhost:8123/memories?user_id=alice"
 curl -X PUT localhost:8123/memory/1 -H 'Content-Type: application/json' \
   -d '{"content":"更新后的文本","mem_type":"preference"}'
@@ -236,6 +238,8 @@ mem.remember("用户是一名后端工程师")
 results = mem.recall("用户的技术背景")
 print(results[0]["content"], results[0]["score"])
 mem.update(results[0]["id"], content="用户是后端工程师，喜欢 Go")
+# 只召回偏好类，并偏向近期记忆
+recent_prefs = mem.recall("用户偏好", type_filter="preference", recency_bias=0.3)
 ```
 
 ### CLI

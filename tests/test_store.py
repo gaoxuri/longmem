@@ -71,6 +71,21 @@ def test_update_memory():
         delete_memory(i)
 
 
+def test_recall_filters():
+    forget_user(USER)
+    remember(USER, "用户使用 PostgreSQL 数据库存储数据", mem_type="fact")
+    remember(USER, "用户的偏好：喜欢 Python", mem_type="preference")
+    # type_filter narrows results
+    pref = recall(USER, "喜欢什么", type_filter="preference")
+    assert len(pref) >= 1 and all(r["mem_type"] == "preference" for r in pref)
+    # recency_bias does not crash and still returns > 0
+    biased = recall(USER, "存储", recency_bias=0.3)
+    assert len(biased) >= 1
+    # default (no args) still works
+    assert recall(USER, "数据库") != []
+    forget_user(USER)
+
+
 def test_ttl_expiry():
     # A 1-second TTL memory should be excluded from recall/list after it expires.
     remember(USER, "这条 1 秒后过期", ttl_seconds=1)
